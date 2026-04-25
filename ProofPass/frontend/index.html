@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ProofPass — Quantum-Safe DeFi Identity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Clash+Display:wght@500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@initia/interwovenkit-react@latest/dist/interwovenkit.umd.js"
+        onerror="console.warn('InterwovenKit CDN unavailable')"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#03060e;--s1:#070b18;--s2:#0b1020;--s3:#101628;
+  --b1:#162035;--b2:#1e2d47;--b3:#263659;
+  --cyan:#00e5ff;--violet:#8b5cf6;--green:#00ff87;--amber:#fbbf24;--red:#ff4757;
+  --text:#dde8f8;--muted:#4a6080;--dim:#2a3d5a;
+  --r:14px;--mono:'JetBrains Mono',monospace;--head:'DM Sans',sans-serif;
+  --gcyan:0 0 40px rgba(0,229,255,.2);--gviolet:0 0 40px rgba(139,92,246,.2);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--head);min-height:100vh;overflow-x:hidden;font-size:15px}
+
+/* GRID BG */
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+
+#canvas-bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* LAYOUT */
+.wrap{position:relative;z-index:1;max-width:1140px;margin:0 auto;padding:0 20px}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--b1);position:sticky;top:0;background:rgba(3,6,14,.88);backdrop-filter:blur(20px);z-index:200}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.25rem;cursor:pointer}
+.logo-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-size:.9rem;box-shadow:var(--gcyan)}
+.logo em{color:var(--cyan);font-style:normal}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{background:none;border:1px solid transparent;color:var(--muted);padding:7px 16px;border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;transition:all .2s}
+.nav-tab:hover{color:var(--text);border-color:var(--b2)}
+.nav-tab.on{border-color:var(--b3);color:var(--cyan);background:rgba(0,229,255,.06)}
+.svc-pill{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.7rem;color:var(--muted);padding:6px 12px;border-radius:20px;border:1px solid var(--b1)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 2s infinite}
+.dot.up{background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot.warn{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* PAGES */
+.page{display:none;animation:fadein .25s ease;padding:32px 0 80px}
+.page.on{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ===== GUIDED TOUR / DEMO PAGE ===== */
+.tour-wrap{display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start}
+
+/* sidebar */
+.tour-sidebar{position:sticky;top:80px}
+.problem-box{background:linear-gradient(135deg,rgba(255,71,87,.06),rgba(255,71,87,.02));border:1px solid rgba(255,71,87,.25);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.problem-box h3{font-size:.82rem;font-family:var(--mono);letter-spacing:.1em;color:var(--red);margin-bottom:10px}
+.problem-item{display:flex;gap:10px;margin-bottom:8px;font-size:.83rem;color:var(--muted);line-height:1.5}
+.problem-item .icon{flex-shrink:0;font-size:1rem}
+.solution-box{background:linear-gradient(135deg,rgba(0,255,135,.06),rgba(0,229,255,.03));border:1px solid rgba(0,255,135,.2);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.solution-box h3{font-size:.82rem;font-family:var(--mono);letter-spacing:.1em;color:var(--green);margin-bottom:10px}
+
+.step-list{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.step-item{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid var(--b1);cursor:pointer;transition:all .25s;opacity:.5}
+.step-item:hover{border-color:var(--b2);opacity:.8}
+.step-item.active{border-color:var(--cyan);background:rgba(0,229,255,.05);opacity:1;box-shadow:var(--gcyan)}
+.step-item.done{border-color:rgba(0,255,135,.3);background:rgba(0,255,135,.04);opacity:1}
+.step-item.done .step-circle{background:var(--green);color:#000;border-color:var(--green)}
+.step-circle{width:28px;height:28px;border-radius:50%;border:2px solid var(--b2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.72rem;flex-shrink:0;transition:all .3s}
+.step-item.active .step-circle{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.1);box-shadow:0 0 12px rgba(0,229,255,.4)}
+.step-meta{flex:1}
+.step-title{font-weight:600;font-size:.85rem;margin-bottom:2px}
+.step-hint{font-size:.75rem;color:var(--muted);line-height:1.4}
+.step-badge{font-family:var(--mono);font-size:.62rem;margin-left:auto;align-self:center;white-space:nowrap}
+
+/* main panel */
+.tour-panel{min-height:400px}
+.panel-slide{display:none;animation:fadein .3s ease}
+.panel-slide.on{display:block}
+
+/* intro slide */
+.intro-hero{text-align:center;padding:40px 20px}
+.intro-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);color:var(--cyan);padding:6px 16px;border-radius:100px;font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;margin-bottom:24px}
+.intro-hero h1{font-size:clamp(2rem,4vw,3.2rem);font-weight:700;line-height:1.1;letter-spacing:-1px;margin-bottom:16px}
+.intro-hero h1 span{background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.intro-hero p{font-size:.95rem;color:var(--muted);max-width:500px;margin:0 auto 32px;line-height:1.7}
+
+/* PROBLEM VS SOLUTION VISUAL */
+.pvs{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch;margin-bottom:28px}
+.pvs-card{border-radius:var(--r);padding:20px;text-align:center}
+.pvs-card.bad{background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.2)}
+.pvs-card.good{background:rgba(0,255,135,.05);border:1px solid rgba(0,255,135,.2)}
+.pvs-label{font-family:var(--mono);font-size:.65rem;letter-spacing:.12em;margin-bottom:10px;color:var(--muted)}
+.pvs-icon{font-size:2rem;margin-bottom:8px}
+.pvs-val{font-size:1.2rem;font-weight:700;margin-bottom:6px}
+.pvs-card.bad .pvs-val{color:var(--red)}
+.pvs-card.good .pvs-val{color:var(--green)}
+.pvs-desc{font-size:.78rem;color:var(--muted);line-height:1.5}
+.pvs-arrow{display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--muted)}
+
+/* WALLET STEP */
+.wallet-connect-area{border:2px dashed var(--b2);border-radius:var(--r);padding:40px;text-align:center;transition:all .3s;cursor:pointer;margin-bottom:20px}
+.wallet-connect-area:hover{border-color:var(--cyan);background:rgba(0,229,255,.03)}
+.wallet-connect-area.connected{border-color:var(--green);border-style:solid;background:rgba(0,255,135,.03);cursor:default}
+.wc-icon{font-size:3rem;margin-bottom:14px}
+.wc-title{font-size:1.1rem;font-weight:600;margin-bottom:8px}
+.wc-subtitle{font-size:.83rem;color:var(--muted);margin-bottom:20px}
+.wc-addr{font-family:var(--mono);font-size:.75rem;color:var(--cyan);word-break:break-all;padding:10px 14px;background:var(--s2);border-radius:8px;margin-top:10px}
+
+/* BUG DEMO SECTION */
+.bug-demo{background:rgba(255,71,87,.04);border:1px solid rgba(255,71,87,.2);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.bug-demo h3{font-size:.85rem;font-weight:700;color:var(--red);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.bug-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;padding:10px 14px;border-radius:8px;background:var(--s1);font-family:var(--mono);font-size:.78rem}
+.bug-row .attempt{flex:1;color:var(--text)}
+.bug-row .result-badge{padding:3px 10px;border-radius:5px;font-size:.68rem}
+.bug-row .result-badge.bad-ok{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3)}
+.bug-row .result-badge.good-block{background:rgba(0,255,135,.1);color:var(--green);border:1px solid rgba(0,255,135,.3)}
+.bug-row .result-badge.info{background:rgba(0,229,255,.1);color:var(--cyan);border:1px solid rgba(0,229,255,.3)}
+
+/* REGISTER FORM */
+.reg-form{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:24px}
+.reg-form-title{font-size:1rem;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.reg-form-sub{font-size:.8rem;color:var(--muted);margin-bottom:20px}
+.field{margin-bottom:16px}
+.field label{display:block;font-family:var(--mono);font-size:.68rem;color:var(--muted);letter-spacing:.1em;margin-bottom:7px}
+.input-wrap{display:flex;align-items:center;background:var(--s2);border:1px solid var(--b2);border-radius:9px;overflow:hidden;transition:border-color .2s}
+.input-wrap:focus-within{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.08)}
+.input-wrap input{background:transparent;border:none;color:var(--text);padding:11px 14px;font-family:var(--mono);font-size:.88rem;outline:none;flex:1;min-width:0}
+.input-wrap input::placeholder{color:var(--muted)}
+.input-suf{padding:0 12px;font-family:var(--mono);font-size:.8rem;color:var(--cyan);border-left:1px solid var(--b2);white-space:nowrap;height:100%;display:flex;align-items:center}
+.hint{font-size:.73rem;color:var(--muted);margin-top:5px;line-height:1.5}
+.hint.warn{color:var(--amber)}
+.hint.ok{color:var(--green)}
+
+/* PROGRESS STEPS */
+.prog-steps{display:flex;margin-bottom:20px;gap:0}
+.ps{display:flex;align-items:center;flex:1;position:relative}
+.ps-n{width:30px;height:30px;border-radius:50%;border:2px solid var(--b2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.72rem;color:var(--muted);flex-shrink:0;transition:all .3s}
+.ps-l{font-size:.7rem;color:var(--muted);margin-left:8px;white-space:nowrap;transition:color .3s}
+.ps::after{content:'';flex:1;height:1px;background:var(--b1);margin:0 10px;min-width:16px}
+.ps:last-child::after{display:none}
+.ps.active .ps-n{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.1);box-shadow:0 0 10px rgba(0,229,255,.3)}
+.ps.active .ps-l{color:var(--text)}
+.ps.done .ps-n{border-color:var(--green);background:var(--green);color:#000}
+.ps.done .ps-l{color:var(--green)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:10px;font-weight:600;font-size:.88rem;cursor:pointer;border:none;transition:all .2s;letter-spacing:.01em;font-family:var(--head)}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--violet));color:#fff;box-shadow:0 0 30px rgba(0,229,255,.25)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 4px 40px rgba(0,229,255,.4)}
+.btn-outline{background:none;border:1px solid var(--b2);color:var(--text)}
+.btn-outline:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.05)}
+.btn-ghost{background:rgba(255,255,255,.05);border:1px solid var(--b1);color:var(--muted)}
+.btn-ghost:hover{color:var(--text);border-color:var(--b2)}
+.btn-green{background:rgba(0,255,135,.1);border:1px solid rgba(0,255,135,.3);color:var(--green)}
+.btn-green:hover{background:rgba(0,255,135,.18)}
+.btn-red{background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.3);color:var(--red)}
+.btn-red:hover{background:rgba(255,71,87,.18)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
+.btn.loading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-left:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* RESULT BOXES */
+.rbox{border-radius:var(--r);border:1px solid var(--b1);padding:20px;margin-top:16px;display:none}
+.rbox.show{display:block;animation:fadein .2s ease}
+.rbox.ok{border-color:rgba(0,255,135,.3);background:rgba(0,255,135,.03)}
+.rbox.err{border-color:rgba(255,71,87,.3);background:rgba(255,71,87,.03)}
+.rbox.info{border-color:rgba(0,229,255,.2);background:rgba(0,229,255,.02)}
+.rbox.warn{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.03)}
+
+/* CRED CARD */
+.cred-card{background:linear-gradient(135deg,#0b1728,#0e1a30);border:1px solid rgba(0,229,255,.18);border-radius:var(--r);padding:20px;position:relative;overflow:hidden}
+.cred-card::before{content:'';position:absolute;top:-40%;right:-10%;width:180px;height:180px;background:radial-gradient(circle,rgba(0,229,255,.05),transparent 70%);pointer-events:none}
+.cred-chip{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:var(--cyan);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.cred-chip::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0}
+.cred-uname{font-size:1.4rem;font-weight:700;margin-bottom:4px}
+.cred-uname span{color:var(--cyan)}
+.cred-wallet{font-family:var(--mono);font-size:.68rem;color:var(--muted);word-break:break-all;margin-bottom:14px}
+.cred-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cred-kv .k{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:.1em;margin-bottom:2px}
+.cred-kv .v{font-family:var(--mono);font-size:.75rem;font-weight:600}
+
+/* PROOF BOX */
+.proof{background:var(--bg);border:1px solid rgba(0,229,255,.1);border-radius:8px;padding:12px;font-family:var(--mono);font-size:.68rem;margin-top:12px}
+.proof-row{display:flex;gap:10px;margin-bottom:5px}
+.proof-row:last-child{margin:0}
+.proof-k{color:var(--cyan);min-width:110px;flex-shrink:0}
+.proof-v{color:var(--text);word-break:break-all}
+
+/* TRUST METER */
+.trust-ring-wrap{position:relative;width:90px;height:90px;flex-shrink:0}
+.trust-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.trust-ring-val{font-family:var(--mono);font-size:1.3rem;font-weight:700;color:var(--cyan)}
+.trust-ring-sub{font-family:var(--mono);font-size:.55rem;color:var(--muted)}
+.trust-bar{height:7px;background:var(--s2);border-radius:4px;overflow:hidden;margin:10px 0}
+.trust-fill{height:100%;border-radius:4px;width:0;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.trust-fill.high{background:linear-gradient(90deg,var(--green),#00ffaa)}
+.trust-fill.medium{background:linear-gradient(90deg,var(--amber),#ffd060)}
+.trust-fill.low{background:linear-gradient(90deg,var(--red),#ff7070)}
+
+/* SESSION GATE */
+.gate{border-radius:var(--r);padding:20px;text-align:center;margin-top:14px}
+.gate.granted{background:rgba(0,255,135,.04);border:1px solid rgba(0,255,135,.2)}
+.gate.denied{background:rgba(251,191,36,.04);border:1px solid rgba(251,191,36,.2)}
+.gate-icon{font-size:2.2rem;margin-bottom:10px}
+.gate-title{font-size:1rem;font-weight:700}
+.gate.granted .gate-title{color:var(--green)}
+.gate.denied .gate-title{color:var(--amber)}
+.gate-desc{font-size:.8rem;color:var(--muted);margin-top:6px;line-height:1.6}
+
+/* BADGE */
+.badge{display:inline-block;padding:3px 9px;border-radius:5px;font-family:var(--mono);font-size:.65rem;font-weight:600}
+.badge-active{background:rgba(0,255,135,.12);color:var(--green);border:1px solid rgba(0,255,135,.25)}
+.badge-revoked{background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.25)}
+.badge-high{background:rgba(0,255,135,.12);color:var(--green);border:1px solid rgba(0,255,135,.25)}
+.badge-medium{background:rgba(251,191,36,.12);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
+.badge-low{background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.25)}
+.badge-cyan{background:rgba(0,229,255,.1);color:var(--cyan);border:1px solid rgba(0,229,255,.2)}
+.badge-violet{background:rgba(139,92,246,.1);color:var(--violet);border:1px solid rgba(139,92,246,.2)}
+
+/* TAGS */
+.tag{display:inline-block;padding:3px 9px;border-radius:5px;font-family:var(--mono);font-size:.63rem;letter-spacing:.06em;margin-right:5px}
+.tag-pq{background:rgba(0,229,255,.08);color:var(--cyan);border:1px solid rgba(0,229,255,.18)}
+.tag-ai{background:rgba(139,92,246,.08);color:var(--violet);border:1px solid rgba(139,92,246,.18)}
+.tag-chain{background:rgba(0,255,135,.08);color:var(--green);border:1px solid rgba(0,255,135,.18)}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{text-align:left;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--b1)}
+.data-table td{padding:11px 14px;border-bottom:1px solid rgba(22,32,53,.6);font-size:.82rem;vertical-align:middle}
+.data-table tr:hover td{background:rgba(255,255,255,.012)}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:22px;right:22px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--b2);padding:11px 16px;border-radius:10px;font-size:.83rem;pointer-events:auto;box-shadow:0 6px 30px rgba(0,0,0,.5);max-width:320px;animation:fadein .2s ease}
+.toast.ok{border-color:rgba(0,255,135,.35)}
+.toast.err{border-color:rgba(255,71,87,.35)}
+.toast.warn{border-color:rgba(251,191,36,.35)}
+
+/* SPINNER */
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(0,229,255,.25);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite}
+
+/* AI LOADING */
+.ai-loading{display:none;align-items:center;gap:12px;padding:14px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:9px;margin-top:12px;font-size:.83rem;color:var(--violet)}
+.ai-result{display:none}
+
+/* SECTION HEADING */
+.sec-head{margin-bottom:28px}
+.sec-head h2{font-size:1.8rem;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
+.sec-head p{color:var(--muted);font-size:.9rem;line-height:1.65}
+
+/* CARD */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:24px;transition:border-color .2s}
+.card:hover{border-color:var(--b2)}
+.card-title{font-size:.95rem;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+.card-sub{font-size:.8rem;color:var(--muted);margin-bottom:18px}
+
+/* GRID LAYOUTS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.g2-l{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* CALLOUT */
+.callout{padding:14px 16px;border-radius:9px;font-size:.83rem;line-height:1.55;display:flex;gap:12px;align-items:flex-start}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout.info{background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.18);color:var(--text)}
+.callout.warn{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.18);color:var(--text)}
+.callout.ok{background:rgba(0,255,135,.06);border:1px solid rgba(0,255,135,.18);color:var(--text)}
+.callout.err{background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.18);color:var(--text)}
+
+/* ANIMATED HINT */
+@keyframes pulseglow{0%,100%{box-shadow:0 0 0 0 rgba(0,229,255,.4)}50%{box-shadow:0 0 0 8px rgba(0,229,255,.0)}}
+.pulse-hint{animation:pulseglow 2s ease-in-out infinite}
+
+/* DEMO LIVE STEPS */
+.live-step{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border-radius:10px;border:1px solid var(--b1);margin-bottom:10px;transition:all .3s;opacity:.4}
+.live-step.active{border-color:var(--cyan);background:rgba(0,229,255,.04);opacity:1}
+.live-step.done{border-color:rgba(0,255,135,.25);background:rgba(0,255,135,.03);opacity:1}
+.ls-num{width:30px;height:30px;border-radius:50%;border:2px solid var(--b2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.72rem;flex-shrink:0;transition:all .3s}
+.live-step.active .ls-num{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.1)}
+.live-step.done .ls-num{border-color:var(--green);background:var(--green);color:#000}
+.ls-body{flex:1}
+.ls-title{font-weight:600;font-size:.88rem;margin-bottom:2px}
+.ls-desc{font-size:.78rem;color:var(--muted)}
+.ls-status{font-family:var(--mono);font-size:.72rem;color:var(--muted);align-self:center;white-space:nowrap}
+
+/* WALLET BAR */
+.wallet-bar{display:flex;align-items:center;gap:12px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px 16px;cursor:pointer;transition:all .2s;margin-bottom:18px}
+.wallet-bar:hover{border-color:var(--cyan)}
+.wallet-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.wallet-info{flex:1}
+.wallet-name{font-weight:600;font-size:.88rem}
+.wallet-addr{font-family:var(--mono);font-size:.65rem;color:var(--muted)}
+.wallet-st{font-family:var(--mono);font-size:.65rem}
+.wallet-st.connected{color:var(--green)}
+.wallet-st.disconnected{color:var(--muted)}
+
+/* SCORE RING */
+.score-ring-wrap{position:relative;width:88px;height:88px;flex-shrink:0}
+.score-ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-val{font-family:var(--mono);font-size:1.3rem;font-weight:700;color:var(--cyan)}
+.score-lbl{font-family:var(--mono);font-size:.55rem;color:var(--muted)}
+
+/* CLICKABLE HINT TOOLTIPS */
+.hint-bubble{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);color:var(--cyan);font-size:.65rem;cursor:pointer;font-family:var(--mono);margin-left:6px;transition:all .2s}
+.hint-bubble:hover{background:rgba(0,229,255,.25)}
+
+/* FLOW DIAGRAM */
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;padding:20px;background:var(--s2);border-radius:var(--r)}
+.flow-node{background:var(--s1);border:1px solid var(--b2);border-radius:8px;padding:9px 14px;text-align:center;font-family:var(--mono);font-size:.7rem}
+.flow-node small{display:block;color:var(--muted);font-size:.6rem;margin-top:2px}
+.flow-node.c{border-color:rgba(0,229,255,.35);color:var(--cyan)}
+.flow-node.v{border-color:rgba(139,92,246,.35);color:var(--violet)}
+.flow-node.g{border-color:rgba(0,255,135,.35);color:var(--green)}
+.flow-arr{color:var(--muted);font-size:1rem}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .tour-wrap{grid-template-columns:1fr}
+  .tour-sidebar{position:static}
+  .g2,.g2-l{grid-template-columns:1fr}
+  .pvs{grid-template-columns:1fr;grid-template-rows:auto auto auto}
+  .pvs-arrow{transform:rotate(90deg)}
+  nav{flex-wrap:wrap;gap:8px}
+  .nav-tabs{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div class="wrap">
+<nav>
+  <div class="logo" onclick="goHome()">
+    <div class="logo-mark">🛡</div>
+    Proof<em>Pass</em>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab on" onclick="nav('demo')" id="tab-demo">🎬 Demo</button>
+    <button class="nav-tab" onclick="nav('register')" id="tab-register">📋 Register</button>
+    <button class="nav-tab" onclick="nav('dashboard')" id="tab-dashboard">📊 Dashboard</button>
+    <button class="nav-tab" onclick="nav('verify')" id="tab-verify">🔍 Verify</button>
+    <button class="nav-tab" onclick="nav('registry')" id="tab-registry">⛓ Registry</button>
+  </div>
+  <div class="svc-pill">
+    <div class="dot" id="svcDot"></div>
+    <span id="svcLabel">Checking...</span>
+  </div>
+</nav>
+
+<!-- ============================================================ -->
+<!-- DEMO / GUIDED TOUR PAGE -->
+<!-- ============================================================ -->
+<div class="page on" id="page-demo">
+  <div class="tour-wrap">
+
+    <!-- SIDEBAR -->
+    <div class="tour-sidebar">
+      <div class="problem-box">
+        <h3>⚠️ THE PROBLEM</h3>
+        <div class="problem-item"><span class="icon">😤</span><span>DeFi users click "Confirm" <strong>47×/day</strong> — every trade, every swap, every approval</span></div>
+        <div class="problem-item"><span class="icon">🔓</span><span>Current ECDSA signatures will be broken by quantum computers</span></div>
+        <div class="problem-item"><span class="icon">👥</span><span><strong>Old bug:</strong> 1 wallet could create unlimited fake identities — alice, bob, hacker all from same wallet</span></div>
+      </div>
+      <div class="solution-box">
+        <h3>✅ THE SOLUTION</h3>
+        <div class="problem-item"><span class="icon">⚡</span><span>Register once → AI-scored trust → auto-sign session for 1 hour</span></div>
+        <div class="problem-item"><span class="icon">⚛️</span><span>CRYSTALS-Dilithium2 quantum-safe signatures (NIST FIPS 204)</span></div>
+        <div class="problem-item"><span class="icon">🔒</span><span><strong>Fixed:</strong> 1 wallet ↔ 1 username. Enforced at protocol level. No more fake identities.</span></div>
+      </div>
+
+      <div class="step-list" id="stepList">
+        <div class="step-item active" id="si-0" onclick="goSlide(0)">
+          <div class="step-circle">▶</div>
+          <div class="step-meta">
+            <div class="step-title">Introduction</div>
+            <div class="step-hint">What ProofPass solves</div>
+          </div>
+        </div>
+        <div class="step-item" id="si-1" onclick="goSlide(1)">
+          <div class="step-circle">1</div>
+          <div class="step-meta">
+            <div class="step-title">Connect Wallet</div>
+            <div class="step-hint">Your digital passport starts here</div>
+          </div>
+          <div class="step-badge" id="si-1-badge"></div>
+        </div>
+        <div class="step-item" id="si-2" onclick="goSlide(2)">
+          <div class="step-circle">2</div>
+          <div class="step-meta">
+            <div class="step-title">The Identity Bug</div>
+            <div class="step-hint">See the problem + the fix</div>
+          </div>
+        </div>
+        <div class="step-item" id="si-3" onclick="goSlide(3)">
+          <div class="step-circle">3</div>
+          <div class="step-meta">
+            <div class="step-title">Register Passport</div>
+            <div class="step-hint">Generate quantum-safe credential</div>
+          </div>
+          <div class="step-badge" id="si-3-badge"></div>
+        </div>
+        <div class="step-item" id="si-4" onclick="goSlide(4)">
+          <div class="step-circle">4</div>
+          <div class="step-meta">
+            <div class="step-title">AI Trust Score</div>
+            <div class="step-hint">Claude analyzes your credential</div>
+          </div>
+          <div class="step-badge" id="si-4-badge"></div>
+        </div>
+        <div class="step-item" id="si-5" onclick="goSlide(5)">
+          <div class="step-circle">5</div>
+          <div class="step-meta">
+            <div class="step-title">DeFi — No Popup</div>
+            <div class="step-hint">Trade with auto-sign session</div>
+          </div>
+          <div class="step-badge" id="si-5-badge"></div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="runFullDemo()" id="autoBtn">
+        ▶&nbsp; Auto-Run Full Demo
+      </button>
+    </div>
+
+    <!-- MAIN PANEL -->
+    <div class="tour-panel">
+
+      <!-- SLIDE 0: Intro -->
+      <div class="panel-slide on" id="slide-0">
+        <div class="intro-hero">
+          <div class="intro-badge">⚛️ NIST PQC · Claude AI · proofpass-1 · Bug Fixed ✅</div>
+          <h1>Stop Clicking Confirm.<br><span>Trade DeFi Smarter.</span></h1>
+          <p>ProofPass gives your <code style="color:var(--cyan);font-family:var(--mono)">.init</code> username a quantum-safe digital passport. Register once, get AI-scored, then trade without wallet popups for a full hour.</p>
+        </div>
+
+        <div class="pvs">
+          <div class="pvs-card bad">
+            <div class="pvs-label">WITHOUT PROOFPASS</div>
+            <div class="pvs-icon">😤</div>
+            <div class="pvs-val">47 popups/day</div>
+            <div class="pvs-desc">Every swap, every approval. Click confirm over and over. Wallet exposed. Vulnerable to quantum attacks.</div>
+          </div>
+          <div class="pvs-arrow">→</div>
+          <div class="pvs-card good">
+            <div class="pvs-label">WITH PROOFPASS</div>
+            <div class="pvs-icon">⚡</div>
+            <div class="pvs-val">0 popups / hour</div>
+            <div class="pvs-desc">Register once. AI verified. Quantum-safe session key signs automatically. You just trade.</div>
+          </div>
+        </div>
+
+        <div class="flow" style="margin-bottom:20px">
+          <div class="flow-node c">Wallet<small>InterwovenKit</small></div>
+          <span class="flow-arr">→</span>
+          <div class="flow-node">Dilithium2<small>Keygen + Sign</small></div>
+          <span class="flow-arr">→</span>
+          <div class="flow-node g">proofpass-1<small>On-chain Registry</small></div>
+          <span class="flow-arr">→</span>
+          <div class="flow-node v">Claude AI<small>Trust Score</small></div>
+          <span class="flow-arr">→</span>
+          <div class="flow-node c">Auto-Sign<small>1hr Session</small></div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button class="btn btn-primary" onclick="goSlide(1)">Start Demo →</button>
+          <button class="btn btn-outline" onclick="nav('register')">Skip to Register</button>
+        </div>
+      </div>
+
+      <!-- SLIDE 1: Connect Wallet -->
+      <div class="panel-slide" id="slide-1">
+        <div style="margin-bottom:24px">
+          <div class="badge badge-cyan" style="margin-bottom:10px">STEP 1 OF 5</div>
+          <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:8px">Connect Your Wallet</h2>
+          <p style="color:var(--muted);font-size:.9rem;line-height:1.65">Your wallet is your key. Every ProofPass identity is permanently bound to exactly one wallet address. This is the foundation of the identity system.</p>
+        </div>
+
+        <div class="callout info" style="margin-bottom:20px">
+          <span class="callout-icon">💡</span>
+          <div>Click the wallet area below to connect. In demo mode, a simulated <code style="color:var(--cyan)">init1...</code> address is generated. In production, this uses real <strong>InterwovenKit</strong> wallet integration.</div>
+        </div>
+
+        <div class="wallet-connect-area" id="walletArea" onclick="connectWallet()">
+          <div class="wc-icon" id="wcIcon">🦊</div>
+          <div class="wc-title" id="wcTitle">Click to Connect Wallet</div>
+          <div class="wc-subtitle" id="wcSubtitle">Powered by @initia/interwovenkit-react</div>
+          <div id="wcAddrBox" style="display:none" class="wc-addr"></div>
+        </div>
+
+        <div class="callout warn" style="margin-bottom:20px" id="walletTip">
+          <span class="callout-icon">⚠️</span>
+          <div><strong>Why does this matter?</strong> This wallet address will be permanently bound to one username. The old bug let any wallet register infinite usernames — we fixed that. Your wallet = your identity.</div>
+        </div>
+
+        <div id="walletConnectedPanel" style="display:none">
+          <div class="callout ok" style="margin-bottom:20px">
+            <span class="callout-icon">✅</span>
+            <div><strong>Wallet connected!</strong> This address is now ready to be bound to exactly one <code style="color:var(--cyan)">.init</code> username. Ready for the next step.</div>
+          </div>
+          <button class="btn btn-primary" onclick="goSlide(2)">Next: See the Bug & Fix →</button>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: The Bug -->
+      <div class="panel-slide" id="slide-2">
+        <div style="margin-bottom:24px">
+          <div class="badge badge-cyan" style="margin-bottom:10px">STEP 2 OF 5</div>
+          <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:8px">The Identity Bug — and the Fix</h2>
+          <p style="color:var(--muted);font-size:.9rem;line-height:1.65">This is the core security issue that broke ProofPass's identity system. Understanding this is key to understanding why the fix matters.</p>
+        </div>
+
+        <div class="bug-demo">
+          <h3>⚠️ OLD BEHAVIOR (Before Fix)</h3>
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">The same wallet could register unlimited identities. Validation only checked if the <em>username</em> was taken — not if the <em>wallet</em> was already used:</p>
+          <div class="bug-row">
+            <span class="attempt">alice.init + wallet_0x123 → register</span>
+            <span class="result-badge bad-ok">✅ ALLOWED (ok)</span>
+          </div>
+          <div class="bug-row">
+            <span class="attempt">bob.init + wallet_0x123 → register (SAME wallet!)</span>
+            <span class="result-badge bad-ok">✅ ALLOWED ← 🚨 BUG</span>
+          </div>
+          <div class="bug-row">
+            <span class="attempt">hacker.init + wallet_0x123 → register (SAME wallet!)</span>
+            <span class="result-badge bad-ok">✅ ALLOWED ← 🚨 BUG</span>
+          </div>
+          <p style="font-size:.78rem;color:var(--red);margin-top:10px">Result: One person = unlimited fake identities. The "digital passport" concept was broken.</p>
+        </div>
+
+        <div class="callout ok" style="margin-bottom:16px">
+          <span class="callout-icon">🔧</span>
+          <div><strong>The Fix:</strong> We added a second registry — <code style="color:var(--cyan)">wallet_registry: wallet → username</code>. Now registration checks BOTH: is the username taken? AND is the wallet already bound? Either block = rejected.</div>
+        </div>
+
+        <div class="bug-demo" style="background:rgba(0,255,135,.04);border-color:rgba(0,255,135,.25)">
+          <h3 style="color:var(--green)">✅ NEW BEHAVIOR (After Fix)</h3>
+          <div class="bug-row">
+            <span class="attempt">alice.init + wallet_0x123 → register</span>
+            <span class="result-badge good-block">✅ ALLOWED (first time)</span>
+          </div>
+          <div class="bug-row">
+            <span class="attempt">bob.init + wallet_0x123 → register (same wallet)</span>
+            <span class="result-badge good-block">🚫 BLOCKED ← Fixed!</span>
+          </div>
+          <div class="bug-row">
+            <span class="attempt">hacker.init + wallet_0x123 → register (same wallet)</span>
+            <span class="result-badge good-block">🚫 BLOCKED ← Fixed!</span>
+          </div>
+          <div class="bug-row">
+            <span class="attempt">alice.init + wallet_0x456 → register (diff wallet)</span>
+            <span class="result-badge good-block">🚫 BLOCKED ← Username taken</span>
+          </div>
+          <p style="font-size:.78rem;color:var(--green);margin-top:10px">Result: 1 wallet ↔ 1 username. True digital passport identity. Enforced at the protocol level.</p>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button class="btn btn-outline" onclick="goSlide(1)">← Back</button>
+          <button class="btn btn-primary" onclick="goSlide(3)">Next: Register Passport →</button>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: Register -->
+      <div class="panel-slide" id="slide-3">
+        <div style="margin-bottom:20px">
+          <div class="badge badge-cyan" style="margin-bottom:10px">STEP 3 OF 5</div>
+          <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:8px">Register Your Quantum-Safe Passport</h2>
+          <p style="color:var(--muted);font-size:.9rem;line-height:1.65">Your <code style="color:var(--cyan)">.init</code> username is your DeFi identity. We generate a CRYSTALS-Dilithium2 keypair and record it permanently on proofpass-1.</p>
+        </div>
+
+        <div class="callout info" style="margin-bottom:18px">
+          <span class="callout-icon">💡</span>
+          <div>Choose a username. Your connected wallet is auto-filled. Click <strong>Issue Passport</strong> — the backend generates a quantum-safe keypair and writes your credential to the registry. This enforces the 1-wallet-1-username rule you just learned about.</div>
+        </div>
+
+        <div class="reg-form">
+          <div class="reg-form-title">🔐 Issue ProofPass Credential</div>
+          <div class="reg-form-sub">Generates CRYSTALS-Dilithium2 keypair → signs → writes to proofpass-1 on-chain registry</div>
+
+          <div class="prog-steps">
+            <div class="ps active" id="rps1"><div class="ps-n">1</div><div class="ps-l">Identity</div></div>
+            <div class="ps" id="rps2"><div class="ps-n">2</div><div class="ps-l">Keygen</div></div>
+            <div class="ps" id="rps3"><div class="ps-n">3</div><div class="ps-l">Sign</div></div>
+            <div class="ps" id="rps4"><div class="ps-n">✓</div><div class="ps-l">Issued</div></div>
+          </div>
+
+          <div class="field">
+            <label>USERNAME (.init) <span class="hint-bubble" title="Your unique .init username — this is your DeFi identity. Cannot be changed after registration.">?</span></label>
+            <div class="input-wrap">
+              <input id="regUser" placeholder="yourname" oninput="onRegInput()"/>
+              <span class="input-suf">.init</span>
+            </div>
+            <div class="hint" id="regUserHint">Choose a unique username. Letters, numbers, underscores only.</div>
+          </div>
+          <div class="field">
+            <label>DISPLAY NAME <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <div class="input-wrap"><input id="regDisplay" placeholder="Alice"/></div>
+          </div>
+          <div class="field">
+            <label>WALLET ADDRESS <span class="hint-bubble">?</span></label>
+            <div class="input-wrap"><input id="regWallet" placeholder="Auto-filled from connected wallet" readonly style="cursor:not-allowed"/></div>
+            <div class="hint" id="regWalletHint">Auto-filled from your connected wallet. <strong>1 wallet = 1 username</strong> — this binding is permanent.</div>
+          </div>
+
+          <button class="btn btn-primary pulse-hint" id="regBtn" onclick="doRegister()" style="width:100%;justify-content:center">
+            🔐 &nbsp;Generate Keypair & Issue ProofPass
+          </button>
+
+          <div class="rbox" id="regResult"></div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-outline" onclick="goSlide(2)">← Back</button>
+        </div>
+      </div>
+
+      <!-- SLIDE 4: AI Trust -->
+      <div class="panel-slide" id="slide-4">
+        <div style="margin-bottom:20px">
+          <div class="badge badge-cyan" style="margin-bottom:10px">STEP 4 OF 5</div>
+          <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:8px">Claude AI Trust Analysis</h2>
+          <p style="color:var(--muted);font-size:.9rem;line-height:1.65">Claude (claude-sonnet-4-20250514) reads your credential and gives a trust score from 0–100. Score ≥ 75 = AUTO-SIGN session granted.</p>
+        </div>
+
+        <div class="callout info" style="margin-bottom:18px">
+          <span class="callout-icon">🤖</span>
+          <div>Claude looks at: credential status, algorithm (quantum-safe?), wallet validity, issuance date, and chain. It reasons about risk and outputs a score with explanation. This is <strong>real AI inference</strong> — not a rule calculator.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Run AI Analysis for your credential</div>
+          <div class="card-sub">Enter the username you just registered (or any registered .init name)</div>
+          <div style="display:flex;gap:10px;margin-bottom:16px">
+            <div class="input-wrap" style="flex:1"><input id="aiUser" placeholder="yourname"/><span class="input-suf">.init</span></div>
+            <button class="btn btn-primary" onclick="doAI()">🤖 Analyse</button>
+          </div>
+
+          <div class="ai-loading" id="aiLoading">
+            <div class="spin"></div>
+            <span>Claude is reading your credential and computing trust score...</span>
+          </div>
+
+          <div class="ai-result" id="aiResult">
+            <div style="display:flex;align-items:center;gap:18px;margin-bottom:16px">
+              <div class="score-ring-wrap">
+                <svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg)">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="var(--b2)" stroke-width="8"/>
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="var(--cyan)" stroke-width="8"
+                    stroke-dasharray="251" id="scoreArc" stroke-dashoffset="251" style="transition:stroke-dashoffset 1.2s ease" stroke-linecap="round"/>
+                </svg>
+                <div class="score-ring-inner">
+                  <div class="score-val" id="scoreVal">—</div>
+                  <div class="score-lbl">/100</div>
+                </div>
+              </div>
+              <div style="flex:1">
+                <div class="trust-bar"><div class="trust-fill" id="trustFill"></div></div>
+                <div id="trustLevel" style="font-weight:700;margin-bottom:8px"></div>
+                <div id="trustFactors" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+              </div>
+            </div>
+            <div id="aiReasoning" style="font-size:.82rem;color:var(--muted);line-height:1.65;padding:12px;background:var(--s2);border-radius:8px;margin-bottom:14px"></div>
+            <div id="sessionGate"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-outline" onclick="goSlide(3)">← Back</button>
+          <button class="btn btn-primary" onclick="goSlide(5)" id="toStep5Btn" style="display:none">Next: DeFi Swap →</button>
+        </div>
+      </div>
+
+      <!-- SLIDE 5: DeFi Swap -->
+      <div class="panel-slide" id="slide-5">
+        <div style="margin-bottom:20px">
+          <div class="badge badge-cyan" style="margin-bottom:10px">STEP 5 OF 5</div>
+          <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:8px">DeFi Swap — Zero Popups</h2>
+          <p style="color:var(--muted);font-size:.9rem;line-height:1.65">With an active session key, transactions sign automatically. No wallet confirmation. No interruption. This is what ProofPass enables.</p>
+        </div>
+
+        <div class="callout ok" style="margin-bottom:18px">
+          <span class="callout-icon">⚡</span>
+          <div>Your session key signs this transaction behind the scenes. In a normal wallet, you'd get a popup asking you to confirm. With ProofPass + a HIGH trust score, it just happens.</div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-title">💱 Execute DeFi Swap</div>
+          <div class="card-sub">Simulates broadcasting a signed swap transaction to proofpass-1</div>
+
+          <div style="background:var(--s2);border-radius:10px;padding:16px;margin-bottom:16px;border:1px solid var(--b1)">
+            <div style="font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-bottom:12px">TRANSACTION DETAILS</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">FROM</div><div style="font-family:var(--mono);font-size:.85rem;font-weight:700;color:var(--amber)">50 USDC</div></div>
+              <div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">TO</div><div style="font-family:var(--mono);font-size:.85rem;font-weight:700;color:var(--cyan)">INIT</div></div>
+              <div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">CHAIN</div><div style="font-family:var(--mono);font-size:.85rem">proofpass-1</div></div>
+              <div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">SIGN METHOD</div><div id="signMethod" style="font-family:var(--mono);font-size:.85rem;color:var(--green)">Session Key (auto)</div></div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary pulse-hint" id="swapBtn" onclick="doSwap()" style="width:100%;justify-content:center">
+            ⚡ &nbsp;Execute Swap (No Popup!)
+          </button>
+
+          <div class="rbox" id="swapResult"></div>
+        </div>
+
+        <div class="card" style="background:rgba(0,229,255,.03);border-color:rgba(0,229,255,.15)">
+          <div class="card-title">🎉 ProofPass Complete!</div>
+          <p style="font-size:.85rem;color:var(--muted);line-height:1.65;margin-bottom:16px">You've seen the full flow: wallet connection → identity binding (1:1 enforced) → quantum-safe registration → AI trust scoring → session-key auto-sign → popup-free DeFi.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="nav('register')">📋 Full Register Page</button>
+            <button class="btn btn-outline" onclick="nav('registry')">⛓ View Registry</button>
+            <button class="btn btn-ghost" onclick="goSlide(0)">↺ Restart Demo</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tour-panel -->
+  </div><!-- /tour-wrap -->
+</div><!-- /page-demo -->
+
+<!-- ============================================================ -->
+<!-- REGISTER PAGE -->
+<!-- ============================================================ -->
+<div class="page" id="page-register">
+  <div class="sec-head">
+    <div style="margin-bottom:10px">
+      <span class="tag tag-pq">⚛️ Quantum-Safe</span>
+      <span class="tag tag-ai">🤖 Claude AI</span>
+      <span class="tag tag-chain">⛓️ proofpass-1</span>
+      <span class="badge badge-cyan">Bug Fixed ✅</span>
+    </div>
+    <h2>Get Your DeFi Passport</h2>
+    <p>Register once, get AI-scored, trade popup-free. Quantum-safe forever. 1 wallet = 1 identity.</p>
+  </div>
+
+  <div class="wallet-bar" onclick="connectWallet()" id="walletBarFull">
+    <div class="wallet-av">🦊</div>
+    <div class="wallet-info">
+      <div class="wallet-name" id="wbName">Connect Wallet</div>
+      <div class="wallet-addr" id="wbAddr">Powered by @initia/interwovenkit-react</div>
+    </div>
+    <div class="wallet-st disconnected" id="wbStatus">● Disconnected</div>
+  </div>
+
+  <div class="g2-l">
+    <div class="card">
+      <div class="card-title">🔐 Issue Quantum-Safe Passport</div>
+      <div class="card-sub">Your .init username becomes an unforgeable credential on-chain</div>
+
+      <div class="prog-steps">
+        <div class="ps active" id="fps1"><div class="ps-n">1</div><div class="ps-l">Identity</div></div>
+        <div class="ps" id="fps2"><div class="ps-n">2</div><div class="ps-l">Keygen</div></div>
+        <div class="ps" id="fps3"><div class="ps-n">3</div><div class="ps-l">Sign</div></div>
+        <div class="ps" id="fps4"><div class="ps-n">✓</div><div class="ps-l">Issued</div></div>
+      </div>
+
+      <div class="field">
+        <label>USERNAME (.init)</label>
+        <div class="input-wrap"><input id="fRegUser" placeholder="yourname" oninput="updatePreview()"/><span class="input-suf">.init</span></div>
+        <div class="hint">Choose your DeFi identity. Once registered, 1 wallet = 1 username.</div>
+      </div>
+      <div class="field">
+        <label>DISPLAY NAME (optional)</label>
+        <div class="input-wrap"><input id="fRegDisplay" placeholder="Alice"/></div>
+      </div>
+      <div class="field">
+        <label>WALLET ADDRESS</label>
+        <div class="input-wrap"><input id="fRegWallet" placeholder="Connect wallet above" readonly style="cursor:not-allowed"/></div>
+        <div class="hint warn" id="fWalletHint">⚠️ Connect wallet first — your wallet is permanently bound to this identity</div>
+      </div>
+
+      <button class="btn btn-primary" id="fRegBtn" onclick="fullRegister()" style="width:100%;justify-content:center">
+        🔐 &nbsp;Generate Keypair &amp; Issue ProofPass
+      </button>
+      <div class="rbox" id="fRegResult"></div>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <div class="card-title">📋 Passport Preview</div>
+        <div id="fullPreview">
+          <div class="cred-card" style="opacity:.5">
+            <div class="cred-chip">⚛️ PROOFPASS · QUANTUM-SAFE</div>
+            <div class="cred-uname"><span id="fpUser">yourname</span>.init</div>
+            <div class="cred-wallet" id="fpWallet">init1... (connect wallet)</div>
+            <div class="cred-grid">
+              <div class="cred-kv"><div class="k">Algorithm</div><div class="v">Dilithium2</div></div>
+              <div class="cred-kv"><div class="k">Chain</div><div class="v">proofpass-1</div></div>
+              <div class="cred-kv"><div class="k">PK Size</div><div class="v">1,312 bytes</div></div>
+              <div class="cred-kv"><div class="k">Security</div><div class="v">NIST Level 2</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout warn">
+        <span class="callout-icon">🔒</span>
+        <div><strong>Identity Rule (Fixed):</strong> This wallet address will be bound to your username permanently. Attempting to register another username with the same wallet is now blocked by the backend.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DASHBOARD PAGE -->
+<!-- ============================================================ -->
+<div class="page" id="page-dashboard">
+  <div class="sec-head">
+    <h2>Passport Dashboard</h2>
+    <p>View credential, run AI trust analysis, manage your auto-sign session.</p>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div style="display:flex;gap:10px">
+      <div class="input-wrap" style="flex:1"><input id="dashUser" placeholder="username"/><span class="input-suf">.init</span></div>
+      <button class="btn btn-primary" onclick="loadDash()">Load Passport</button>
+    </div>
+  </div>
+
+  <div id="dashEmpty" style="text-align:center;padding:60px;color:var(--muted);font-size:.9rem">↑ Enter your .init username above to view your ProofPass credential</div>
+
+  <div id="dashContent" style="display:none">
+    <div class="g2">
+      <div>
+        <div class="cred-card" id="dashCred" style="margin-bottom:12px">
+          <div class="cred-chip" id="dashChip">⚛️ ACTIVE</div>
+          <div class="cred-uname" id="dashUname">—</div>
+          <div class="cred-wallet" id="dashWallet">—</div>
+          <div class="cred-grid">
+            <div class="cred-kv"><div class="k">Chain</div><div class="v">proofpass-1</div></div>
+            <div class="cred-kv"><div class="k">Issued</div><div class="v" id="dashIssued">—</div></div>
+            <div class="cred-kv"><div class="k">Trust</div><div class="v" id="dashTrust">—</div></div>
+            <div class="cred-kv"><div class="k">Algo</div><div class="v">Dilithium2</div></div>
+          </div>
+          <div id="dashProof" style="margin-top:12px"></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-green" onclick="runDashAI()" style="flex:1">🤖 &nbsp;Run AI Analysis</button>
+          <button class="btn btn-red" onclick="revokeCredential()">🗑️ Revoke</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🤖 Claude AI Trust Analysis</div>
+        <div class="card-sub">Claude claude-sonnet-4-20250514 evaluates your credential for auto-sign eligibility</div>
+        <div class="ai-loading" id="dashAiLoading">
+          <div class="spin"></div>
+          <span>Claude is analysing your credential...</span>
+        </div>
+        <div class="ai-result" id="dashAiResult">
+          <div style="display:flex;align-items:center;gap:18px;margin-bottom:14px">
+            <div class="score-ring-wrap">
+              <svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg)">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--b2)" stroke-width="8"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--cyan)" stroke-width="8"
+                  stroke-dasharray="251" id="dashScoreArc" stroke-dashoffset="251" style="transition:stroke-dashoffset 1.2s ease" stroke-linecap="round"/>
+              </svg>
+              <div class="score-ring-inner">
+                <div class="score-val" id="dashScoreVal">—</div>
+                <div class="score-lbl">/100</div>
+              </div>
+            </div>
+            <div style="flex:1">
+              <div class="trust-bar"><div class="trust-fill" id="dashTrustFill"></div></div>
+              <div id="dashTrustLevel" style="font-weight:700;margin-bottom:8px"></div>
+              <div id="dashFactors" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+            </div>
+          </div>
+          <div id="dashReasoning" style="font-size:.82rem;color:var(--muted);line-height:1.65;padding:12px;background:var(--s2);border-radius:8px;margin-bottom:12px"></div>
+          <div id="dashGate"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VERIFY PAGE -->
+<!-- ============================================================ -->
+<div class="page" id="page-verify">
+  <div class="sec-head">
+    <h2>Verify a Passport</h2>
+    <p>Check any .init credential — real-time AI trust score and session eligibility.</p>
+  </div>
+  <div class="card">
+    <div class="field">
+      <label>USERNAME TO VERIFY</label>
+      <div class="input-wrap"><input id="verUser" placeholder="alice"/><span class="input-suf">.init</span></div>
+    </div>
+    <div class="field">
+      <label>CONTEXT (optional)</label>
+      <div class="input-wrap"><input id="verCtx" placeholder="e.g. Swap 50 USDC → INIT on DeFi protocol"/></div>
+    </div>
+    <button class="btn btn-primary" onclick="doVerify()">🔍 &nbsp;Verify + AI Score</button>
+  </div>
+  <div class="rbox" id="verResult"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- REGISTRY PAGE -->
+<!-- ============================================================ -->
+<div class="page" id="page-registry">
+  <div class="sec-head">
+    <h2>proofpass-1 Registry</h2>
+    <p id="regCount">Loading credentials from on-chain registry...</p>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>USERNAME</th>
+          <th>WALLET</th>
+          <th>STATUS</th>
+          <th>TRUST</th>
+          <th>ISSUED</th>
+          <th>CRED HASH</th>
+        </tr>
+      </thead>
+      <tbody id="regBody">
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);font-family:var(--mono);font-size:.8rem">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="height:60px"></div>
+</div><!-- /wrap -->
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────
+const CRYPTO = 'http://localhost:8001';
+const AI_SVC = 'http://localhost:8002';
+
+// ── STATE ───────────────────────────────────────────────────────────
+let walletConnected = false;
+let walletAddress = '';
+let currentSlide = 0;
+let demoRegistered = '';
+let lastAIResult = null;
+let sessionGranted = false;
+
+// ── CANVAS PARTICLES ─────────────────────────────────────────────────
+(function(){
+  const c = document.getElementById('canvas-bg');
+  const ctx = c.getContext('2d');
+  let W, H, pts = [];
+  function resize(){ W = c.width = innerWidth; H = c.height = innerHeight; }
+  resize(); addEventListener('resize', resize);
+  for(let i=0;i<60;i++) pts.push({
+    x:Math.random()*100, y:Math.random()*100,
+    vx:(Math.random()-.5)*.1, vy:(Math.random()-.5)*.1,
+    r:Math.random()*1.4+.3
+  });
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    for(let p of pts){
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>100) p.vx*=-1;
+      if(p.y<0||p.y>100) p.vy*=-1;
+      ctx.beginPath();
+      ctx.arc(p.x/100*W, p.y/100*H, p.r, 0, Math.PI*2);
+      ctx.fillStyle='rgba(0,229,255,.25)';
+      ctx.fill();
+    }
+    for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
+      const a=pts[i],b=pts[j];
+      const dx=(a.x-b.x)/100*W, dy=(a.y-b.y)/100*H;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<120){
+        ctx.beginPath();
+        ctx.moveTo(a.x/100*W,a.y/100*H);
+        ctx.lineTo(b.x/100*W,b.y/100*H);
+        ctx.strokeStyle=`rgba(0,229,255,${.05*(1-d/120)})`;
+        ctx.lineWidth=.5; ctx.stroke();
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── TOAST ─────────────────────────────────────────────────────────────
+function toast(msg, type='info', dur=4000){
+  const icons={success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
+  const el=document.createElement('div');
+  el.className=`toast ${type==='success'?'ok':type==='error'?'err':type}`;
+  el.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(()=>{
+    el.style.opacity='0';el.style.transition='.3s';
+    setTimeout(()=>el.remove(),300);
+  },dur);
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────
+function nav(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
+  document.getElementById('tab-'+id).classList.add('on');
+  if(id==='registry') loadRegistry();
+}
+function goHome(){ nav('demo'); goSlide(0); }
+
+// ── DEMO SLIDES ───────────────────────────────────────────────────────
+function goSlide(n){
+  document.querySelectorAll('.panel-slide').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.step-item').forEach((s,i)=>{
+    s.classList.remove('active');
+    if(i<n) s.classList.add('done');
+    else s.classList.remove('done');
+  });
+  document.getElementById('slide-'+n).classList.add('on');
+  document.getElementById('si-'+n).classList.add('active');
+  currentSlide = n;
+}
+
+// ── SERVICE HEALTH ────────────────────────────────────────────────────
+async function checkServices(){
+  try{
+    const r = await fetch(CRYPTO+'/stats');
+    const d = await r.json();
+    document.getElementById('svcDot').className='dot up';
+    document.getElementById('svcLabel').textContent='Services Online';
+    const el1=document.getElementById('stat-total');
+    const el2=document.getElementById('stat-active');
+    if(el1) el1.textContent=d.total_credentials;
+    if(el2) el2.textContent=d.active;
+  }catch(e){
+    document.getElementById('svcDot').className='dot warn';
+    document.getElementById('svcLabel').textContent='Offline — run start.sh';
+  }
+}
+setInterval(checkServices,10000); checkServices();
+
+// ── WALLET CONNECT ────────────────────────────────────────────────────
+function connectWallet(){
+  if(walletConnected){
+    walletConnected=false; walletAddress='';
+    updateWalletUI(false,'','');
+    toast('Wallet disconnected','info');
+    return;
+  }
+  if(typeof window.InterwovenKit !== 'undefined'){
+    try{
+      window.InterwovenKit.connect().then(accounts=>{
+        const addr=accounts[0]?.address||'';
+        if(addr){ setWalletConnected(addr,'InterwovenKit'); return; }
+      }).catch(()=>simWallet());
+      return;
+    }catch(e){}
+  }
+  simWallet();
+}
+
+function simWallet(){
+  // Prompt user to paste their REAL testnet address for live AI scoring.
+  // Random addresses have 0 on-chain txs and always score 45/100.
+  const stored = localStorage.getItem('proofpass_demo_wallet') || '';
+  const input = prompt(
+    'Paste your Initia testnet wallet address (init1...)\n\n' +
+    'WHY: The AI reads your REAL on-chain tx history.\n' +
+    'Random address = 0 txs = 45/100 score.\n' +
+    'Your real testnet address = real history = higher score.\n\n' +
+    'Get testnet tokens: https://faucet.testnet.initia.xyz\n' +
+    'Leave blank for demo mode (shows 45/100).',
+    stored
+  );
+  const addr = (input || '').trim();
+  if(addr && addr.startsWith('init1') && addr.length >= 20){
+    localStorage.setItem('proofpass_demo_wallet', addr);
+    setWalletConnected(addr, 'Your Testnet Wallet');
+  } else {
+    const ch='abcdefghijklmnopqrstuvwxyz0123456789';
+    let rAddr='init1';
+    for(let i=0;i<38;i++) rAddr+=ch[Math.floor(Math.random()*ch.length)];
+    setWalletConnected(rAddr,'Demo Mode (random - score = 45)');
+    setTimeout(()=>toast('Tip: paste your real init1 address for a live score from chain data','warn'),1200);
+  }
+}
+
+function setWalletConnected(addr, method){
+  walletAddress=addr; walletConnected=true;
+  updateWalletUI(true,addr,method);
+  toast(`Wallet connected via ${method} ✨`,'success');
+  markSIDone(1,'✅');
+}
+
+function updateWalletUI(connected, addr, method){
+  // Demo slide wallet area
+  const wa=document.getElementById('walletArea');
+  const wcI=document.getElementById('wcIcon');
+  const wcT=document.getElementById('wcTitle');
+  const wcS=document.getElementById('wcSubtitle');
+  const wcA=document.getElementById('wcAddrBox');
+  if(connected){
+    wa && wa.classList.add('connected');
+    if(wcI) wcI.textContent='✅';
+    if(wcT) wcT.textContent='Wallet Connected';
+    if(wcS) wcS.textContent=`via ${method}`;
+    if(wcA){ wcA.style.display='block'; wcA.textContent=addr; }
+    const tip=document.getElementById('walletTip');
+    if(tip) tip.style.display='none';
+    const panel=document.getElementById('walletConnectedPanel');
+    if(panel) panel.style.display='block';
+    // Reg form wallet
+    const rw=document.getElementById('regWallet');
+    if(rw) rw.value=addr;
+    const rh=document.getElementById('regWalletHint');
+    if(rh){ rh.textContent='✅ Wallet bound: '+addr.slice(0,20)+'...'; rh.className='hint ok'; }
+  } else {
+    wa && wa.classList.remove('connected');
+    if(wcI) wcI.textContent='🦊';
+    if(wcT) wcT.textContent='Click to Connect Wallet';
+    if(wcS) wcS.textContent='Powered by @initia/interwovenkit-react';
+    if(wcA) wcA.style.display='none';
+    const panel=document.getElementById('walletConnectedPanel');
+    if(panel) panel.style.display='none';
+  }
+  // Full register page wallet bar
+  const wbN=document.getElementById('wbName');
+  const wbA=document.getElementById('wbAddr');
+  const wbS=document.getElementById('wbStatus');
+  const fw=document.getElementById('fRegWallet');
+  const fwh=document.getElementById('fWalletHint');
+  const fpW=document.getElementById('fpWallet');
+  if(connected){
+    if(wbN) wbN.textContent='Initia Wallet Connected';
+    if(wbA) wbA.textContent=addr.slice(0,24)+'...';
+    if(wbS){ wbS.textContent='● Connected'; wbS.className='wallet-st connected'; }
+    if(fw) fw.value=addr;
+    if(fwh){ fwh.textContent='✅ Wallet bound. 1 wallet = 1 username enforced.'; fwh.className='hint ok'; }
+    if(fpW) fpW.textContent=addr.slice(0,28)+'...';
+  } else {
+    if(wbN) wbN.textContent='Connect Wallet';
+    if(wbA) wbA.textContent='Powered by @initia/interwovenkit-react';
+    if(wbS){ wbS.textContent='● Disconnected'; wbS.className='wallet-st disconnected'; }
+    if(fw) fw.value='';
+    if(fwh){ fwh.textContent='⚠️ Connect wallet first'; fwh.className='hint warn'; }
+  }
+}
+
+// ── STEP MARKERS ───────────────────────────────────────────────────────
+function markSIDone(n, badge){
+  const el=document.getElementById('si-'+n+'-badge');
+  if(el) el.textContent=badge;
+}
+
+// ── REG INPUT HANDLER ─────────────────────────────────────────────────
+function onRegInput(){
+  const u=document.getElementById('regUser').value||'yourname';
+  const h=document.getElementById('regUserHint');
+  if(u.length>3 && /^[a-z0-9_]+$/i.test(u)){
+    h.textContent='✅ Username looks good!'; h.className='hint ok';
+  } else if(u.length>0){
+    h.textContent='Use letters, numbers, underscores only'; h.className='hint warn';
+  }
+  if(walletAddress && document.getElementById('regWallet')){
+    document.getElementById('regWallet').value=walletAddress;
+  }
+}
+
+function updatePreview(){
+  const u=document.getElementById('fRegUser').value||'yourname';
+  const el=document.getElementById('fpUser');
+  if(el) el.textContent=u;
+}
+
+// ── SET PROG STEPS ──────────────────────────────────────────────────
+function setPStep(prefix, n){
+  for(let i=1;i<=4;i++){
+    const el=document.getElementById(prefix+'ps'+i); if(!el)continue;
+    el.className='ps'+(i<n?' done':i===n?' active':'');
+  }
+}
+
+// ── REGISTER (DEMO SLIDE) ─────────────────────────────────────────────
+async function doRegister(){
+  const username=(document.getElementById('regUser').value||'').trim();
+  const display=(document.getElementById('regDisplay').value||'').trim();
+  const wallet=document.getElementById('regWallet').value||walletAddress;
+
+  if(!username){toast('Enter a .init username','error');return;}
+  if(username.includes('.')){toast('Just the name part — .init is added automatically','warn');return;}
+  if(!wallet){toast('Connect your wallet first','warn');goSlide(1);return;}
+
+  const btn=document.getElementById('regBtn');
+  btn.disabled=true; btn.classList.add('loading');
+  btn.innerHTML='<span class="spin"></span> &nbsp;Generating Dilithium2 keypair...';
+  setPStep('r',2); await sleep(400); setPStep('r',3);
+
+  try{
+    const r=await fetch(CRYPTO+'/credential/register',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,display_name:display,wallet_address:wallet})
+    });
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.detail||'Registration failed');
+    setPStep('r',4);
+    demoRegistered=username;
+    markSIDone(3,'✅');
+
+    const rbox=document.getElementById('regResult');
+    rbox.className='rbox ok show';
+    rbox.innerHTML=`
+      <div style="font-weight:700;font-size:1rem;color:var(--green);margin-bottom:14px">
+        ✅ ProofPass Issued — <strong>${username}.init</strong> is now quantum-safe
+      </div>
+      <div class="cred-card">
+        <div class="cred-chip">⚛️ QUANTUM-SAFE · ACTIVE · proofpass-1 · 1-WALLET=1-USERNAME ✅</div>
+        <div class="cred-uname"><span>${username}</span>.init</div>
+        <div class="cred-wallet">${d.credential.wallet_address}</div>
+        <div class="cred-grid">
+          <div class="cred-kv"><div class="k">Algorithm</div><div class="v">Dilithium2</div></div>
+          <div class="cred-kv"><div class="k">Chain</div><div class="v">proofpass-1</div></div>
+          <div class="cred-kv"><div class="k">PK Size</div><div class="v">1,312 bytes</div></div>
+          <div class="cred-kv"><div class="k">Issued</div><div class="v">${d.credential.issued_at_readable}</div></div>
+        </div>
+      </div>
+      <div class="proof" style="margin-top:12px">
+        <div class="proof-row"><span class="proof-k">chain_id</span><span class="proof-v">proofpass-1</span></div>
+        <div class="proof-row"><span class="proof-k">tx_hash</span><span class="proof-v">${d.credential.tx_hash}</span></div>
+        <div class="proof-row"><span class="proof-k">cred_hash</span><span class="proof-v">${d.credential.credential_hash}</span></div>
+        <div class="proof-row"><span class="proof-k">identity_rule</span><span class="proof-v" style="color:var(--green)">1 wallet = 1 username enforced ✅</span></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="goToAI('${username}')">🤖 Run AI Analysis →</button>
+        <button class="btn btn-outline" onclick="goSlide(4)">Next Step →</button>
+      </div>`;
+    toast(`${username}.init passport issued! Identity bound.`,'success');
+    checkServices();
+    // Pre-fill AI step
+    const aiU=document.getElementById('aiUser');
+    if(aiU) aiU.value=username;
+  }catch(e){
+    const rbox=document.getElementById('regResult');
+    rbox.className='rbox err show';
+    rbox.innerHTML=`<div style="font-weight:600;color:var(--red);margin-bottom:8px">❌ Registration Failed</div>
+      <div style="font-size:.85rem;color:var(--muted)">${e.message}</div>
+      ${e.message.includes('wallet')? '<div class="callout warn" style="margin-top:10px"><span>⚠️</span><div>This wallet is already bound to another username. This is the <strong>bug fix in action</strong> — 1 wallet can only own 1 identity.</div></div>' : ''}`;
+    toast(e.message,'error'); setPStep('r',1);
+  }
+  btn.disabled=false; btn.classList.remove('loading');
+  btn.innerHTML='🔐 &nbsp;Generate Keypair &amp; Issue ProofPass';
+}
+
+function goToAI(username){
+  goSlide(4);
+  const aiU=document.getElementById('aiUser');
+  if(aiU) aiU.value=username;
+  setTimeout(()=>doAI(),300);
+}
+
+// ── FULL PAGE REGISTER ───────────────────────────────────────────────
+async function fullRegister(){
+  const username=(document.getElementById('fRegUser').value||'').trim();
+  const display=(document.getElementById('fRegDisplay').value||'').trim();
+  const wallet=document.getElementById('fRegWallet').value||walletAddress;
+  if(!username){toast('Enter a .init username','error');return;}
+  if(username.includes('.')){toast('Just the username part — .init is added','warn');return;}
+  if(!wallet){toast('Connect wallet first','warn');return;}
+
+  const btn=document.getElementById('fRegBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span> &nbsp;Generating keypair...';
+  setPStep('f',2); await sleep(400); setPStep('f',3);
+
+  try{
+    const r=await fetch(CRYPTO+'/credential/register',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,display_name:display,wallet_address:wallet})
+    });
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.detail||'Registration failed');
+    setPStep('f',4);
+    const rb=document.getElementById('fRegResult');
+    rb.className='rbox ok show';
+    rb.innerHTML=`<div style="font-weight:700;color:var(--green);margin-bottom:12px">✅ ${username}.init — Passport Issued!</div>
+      <div class="proof">
+        <div class="proof-row"><span class="proof-k">wallet_bound</span><span class="proof-v" style="color:var(--green)">${d.credential.wallet_address}</span></div>
+        <div class="proof-row"><span class="proof-k">identity_rule</span><span class="proof-v" style="color:var(--green)">${d.identity_rule}</span></div>
+        <div class="proof-row"><span class="proof-k">tx_hash</span><span class="proof-v">${d.credential.tx_hash}</span></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:10px">
+        <button class="btn btn-green" onclick="nav('dashboard');document.getElementById('dashUser').value='${username}';loadDash()" style="flex:1">🤖 AI Analysis</button>
+      </div>`;
+    toast(`${username}.init issued! 1 wallet = 1 identity enforced.`,'success');
+    checkServices();
+  }catch(e){
+    const rb=document.getElementById('fRegResult');
+    rb.className='rbox err show';
+    rb.innerHTML=`<div style="font-weight:700;color:var(--red);margin-bottom:6px">❌ ${e.message}</div>
+      ${e.message.includes('wallet')? '<div class="callout warn" style="margin-top:8px"><span>🔒</span><div><strong>Bug fix active:</strong> This wallet is already bound to another .init username. Revoke it first to re-register.</div></div>' : ''}`;
+    toast(e.message,'error'); setPStep('f',1);
+  }
+  btn.disabled=false;
+  btn.innerHTML='🔐 &nbsp;Generate Keypair &amp; Issue ProofPass';
+}
+
+// ── AI ANALYSIS ────────────────────────────────────────────────────────
+async function doAI(){
+  const u=(document.getElementById('aiUser').value||'').trim();
+  if(!u){toast('Enter a username to analyse','warn');return;}
+  document.getElementById('aiLoading').style.display='flex';
+  document.getElementById('aiResult').style.display='none';
+  try{
+    const r=await fetch(AI_SVC+'/analyse',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,action:'demo_defi_swap',context:'ProofPass guided demo'})
+    });
+    const d=await r.json();
+    renderAI(d,'aiResult','scoreArc','scoreVal','trustFill','trustLevel','trustFactors','aiReasoning','sessionGate');
+    document.getElementById('aiLoading').style.display='none';
+    lastAIResult=d; sessionGranted=d.auto_sign_enabled||false;
+    markSIDone(4, d.trust_level==='HIGH'?'✅':'⚠️');
+    if(d.auto_sign_enabled){
+      const btn=document.getElementById('toStep5Btn');
+      if(btn) btn.style.display='inline-flex';
+    }
+    toast(`AI: ${d.trust_level} trust (${d.trust_score}/100)`,'info');
+  }catch(e){
+    document.getElementById('aiLoading').style.display='none';
+    toast('AI service unreachable — is ai_service running on port 8002?','warn');
+  }
+}
+
+function renderAI(d, resultId, arcId, scoreId, fillId, levelId, factorsId, reasoningId, gateId){
+  const score=d.trust_score||0;
+  const level=(d.trust_level||'LOW').toLowerCase();
+  const LEVELUP=d.trust_level||'LOW';
+
+  document.getElementById(resultId).style.display='block';
+  document.getElementById(scoreId).textContent=score;
+  document.getElementById(levelId).innerHTML=`<span class="badge badge-${level}">${LEVELUP} TRUST</span>`;
+  
+  const fill=document.getElementById(fillId);
+  fill.className=`trust-fill ${level}`;
+  setTimeout(()=>fill.style.width=score+'%',60);
+
+  const arc=document.getElementById(arcId);
+  const circ=251;
+  setTimeout(()=>{ arc.style.strokeDashoffset=circ*(1-score/100); },80);
+  const lc={HIGH:'var(--green)',MEDIUM:'var(--amber)',LOW:'var(--red)'};
+  arc.style.stroke=lc[LEVELUP]||'var(--cyan)';
+
+  const factors=[...(d.factors||[]),...(d.risk_flags||[]).map(f=>'⚠️ '+f)];
+  document.getElementById(factorsId).innerHTML=factors.map(f=>{
+    const cls=f.startsWith('✓')?'tag-chain':f.startsWith('✗')||f.startsWith('⚠')?'tag-pq':'tag-ai';
+    return `<span class="tag ${cls}">${f}</span>`;
+  }).join('');
+
+  const method=d.ai_powered?(d.analysis_method&&d.analysis_method.includes('claude')?'Claude claude-sonnet-4-20250514':'Qwen AI'):'Rule-Based Engine';
+  const chainDataHTML = d.chain_data_used ? `
+    <div style="margin-top:10px;padding:10px 14px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);border-radius:8px;font-family:var(--mono);font-size:.68rem;">
+      <div style="color:var(--cyan);margin-bottom:6px;font-size:.65rem;letter-spacing:.1em;">⛓ REAL ON-CHAIN DATA (Initia Testnet)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        <div style="color:var(--muted)">On-chain txs:</div><div style="color:var(--text)">${d.on_chain_tx_count||0} verified</div>
+        <div style="color:var(--muted)">Wallet age:</div><div style="color:var(--text)">${d.wallet_age_days||0} days</div>
+        <div style="color:var(--muted)">Data source:</div><div style="color:var(--green)">${d.chain_data_source||'initia_testnet'}</div>
+      </div>
+    </div>` : '';
+  document.getElementById(reasoningId).innerHTML=`<strong>🤖 ${method}:</strong> ${d.reasoning||'Analysis complete.'}${chainDataHTML}`;
+
+  const gate=document.getElementById(gateId);
+  if(d.auto_sign_enabled){
+    gate.innerHTML=`<div class="gate granted">
+      <div class="gate-icon">⚡</div>
+      <div class="gate-title">AUTO-SIGN SESSION GRANTED</div>
+      <div class="gate-desc">You can trade DeFi for the next hour with <strong>zero wallet popups</strong>. Session key signs transactions automatically.</div>
+      <div style="font-family:var(--mono);font-size:.65rem;color:var(--muted);margin-top:8px">ENGINE: ${method} · TTL: 3600s · CHAIN: proofpass-1${d.chain_data_used?' · ⛓ CHAIN-VERIFIED':''}</div>
+    </div>`;
+  } else {
+    gate.innerHTML=`<div class="gate denied">
+      <div class="gate-icon">🔒</div>
+      <div class="gate-title">Manual Confirmation Required</div>
+      <div class="gate-desc">Trust score ${score}/100 is below the 75-point threshold. Each transaction needs your manual wallet approval until score improves.</div>
+    </div>`;
+  }
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────
+async function loadDash(){
+  const u=(document.getElementById('dashUser').value||'').trim();
+  if(!u){toast('Enter a username','error');return;}
+  try{
+    const r=await fetch(CRYPTO+'/credential/'+u);
+    if(!r.ok) throw new Error(`No ProofPass found for ${u}.init`);
+    const d=await r.json();
+    document.getElementById('dashContent').style.display='block';
+    document.getElementById('dashEmpty').style.display='none';
+    document.getElementById('dashUname').innerHTML=`<span>${d.username}</span>.init`;
+    document.getElementById('dashWallet').textContent=d.wallet_address;
+    document.getElementById('dashIssued').textContent=d.issued_at_readable||'—';
+    document.getElementById('dashTrust').textContent=(d.trust_level||'unverified').toUpperCase();
+    document.getElementById('dashChip').textContent=d.status==='active'?'⚛️ QUANTUM-SAFE ACTIVE':'🚫 REVOKED';
+    document.getElementById('dashCred').style.borderColor=d.status==='active'?'rgba(0,255,135,.3)':'rgba(255,71,87,.3)';
+    document.getElementById('dashProof').innerHTML=`<div class="proof">
+      <div class="proof-row"><span class="proof-k">chain_id</span><span class="proof-v">proofpass-1</span></div>
+      <div class="proof-row"><span class="proof-k">tx_hash</span><span class="proof-v">${(d.tx_hash||'—').slice(0,36)}...</span></div>
+      <div class="proof-row"><span class="proof-k">cred_hash</span><span class="proof-v">${(d.credential_hash||'').slice(0,28)}...</span></div>
+    </div>`;
+    document.getElementById('dashAiResult').style.display='none';
+  }catch(e){ toast(e.message,'error'); }
+}
+
+async function runDashAI(){
+  const u=(document.getElementById('dashUser').value||'').trim();
+  if(!u){toast('Load a credential first','warn');return;}
+  document.getElementById('dashAiLoading').style.display='flex';
+  document.getElementById('dashAiResult').style.display='none';
+  try{
+    const r=await fetch(AI_SVC+'/analyse',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,action:'defi_action',context:'Dashboard trust review'})
+    });
+    const d=await r.json();
+    renderAI(d,'dashAiResult','dashScoreArc','dashScoreVal','dashTrustFill','dashTrustLevel','dashFactors','dashReasoning','dashGate');
+    document.getElementById('dashAiLoading').style.display='none';
+    toast(`Analysis: ${d.trust_level} (${d.trust_score}/100)`,'info');
+  }catch(e){
+    document.getElementById('dashAiLoading').style.display='none';
+    toast('AI service unreachable','warn');
+  }
+}
+
+async function revokeCredential(){
+  const u=(document.getElementById('dashUser').value||'').trim();
+  if(!u){toast('Load credential first','warn');return;}
+  if(!confirm(`Revoke ProofPass for ${u}.init? Wallet will be freed to re-register.`)) return;
+  try{
+    const r=await fetch(CRYPTO+'/credential/revoke',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u})});
+    const d=await r.json();
+    toast(d.message||`${u}.init revoked`,'warn');
+    loadDash();
+  }catch(e){ toast(e.message,'error'); }
+}
+
+// ── VERIFY ────────────────────────────────────────────────────────────
+async function doVerify(){
+  const u=(document.getElementById('verUser').value||'').trim();
+  const ctx=(document.getElementById('verCtx').value||'').trim();
+  if(!u){toast('Enter a username','error');return;}
+
+  const rbox=document.getElementById('verResult');
+  rbox.className='rbox info show';
+  rbox.innerHTML='<span class="spin"></span> &nbsp;Fetching credential &amp; running AI analysis...';
+
+  try{
+    const [cr,ar]=await Promise.all([
+      fetch(CRYPTO+'/credential/'+u),
+      fetch(AI_SVC+'/session/gate',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:u,action:'external_verify',context:ctx||'External verification'})})
+    ]);
+    if(!cr.ok) throw new Error(`No ProofPass for ${u}.init`);
+    const cred=await cr.json();
+    const gate=await ar.json();
+    const trust=gate.trust_level||'LOW';
+    const score=gate.trust_score||0;
+    const granted=gate.session_granted;
+    const cls=trust==='HIGH'?'ok':trust==='MEDIUM'?'warn':'err';
+    const method=gate.ai_powered?(gate.analysis_method==='claude_sonnet'?'Claude claude-sonnet-4-20250514':'Qwen AI'):'Rule-Based Engine';
+    const lv=trust.toLowerCase();
+    const lc={HIGH:'var(--green)',MEDIUM:'var(--amber)',LOW:'var(--red)'};
+
+    rbox.className=`rbox ${cls} show`;
+    rbox.innerHTML=`
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div style="font-size:1.8rem">${cred.status==='active'?'✅':'🚫'}</div>
+        <div>
+          <div style="font-weight:700;font-size:1.05rem">${u}.init</div>
+          <div style="font-size:.78rem;color:var(--muted);font-family:var(--mono)">${cred.wallet_address}</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:700;color:${lc[trust]}">${score}/100</div>
+          <div style="font-size:.65rem;color:var(--muted)">TRUST SCORE</div>
+        </div>
+      </div>
+      <div class="trust-bar"><div class="trust-fill ${lv}" style="width:${score}%"></div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0;text-align:center">
+        <div><div class="badge badge-${cred.status==='active'?'active':'revoked'}">${cred.status.toUpperCase()}</div><div style="font-size:.62rem;color:var(--muted);margin-top:3px">STATUS</div></div>
+        <div><div class="badge badge-${lv}">${trust}</div><div style="font-size:.62rem;color:var(--muted);margin-top:3px">TRUST</div></div>
+        <div><div class="badge badge-${granted?'active':'revoked'}">${granted?'AUTO-SIGN':'MANUAL'}</div><div style="font-size:.62rem;color:var(--muted);margin-top:3px">SESSION</div></div>
+      </div>
+      <div style="margin-bottom:10px">
+        <span class="tag tag-pq">⚛️ ${cred.algorithm}</span>
+        <span class="tag tag-chain">⛓️ proofpass-1</span>
+        <span class="tag tag-ai">🤖 ${method}</span>
+      </div>
+      <div class="proof">
+        <div class="proof-row"><span class="proof-k">cred_hash</span><span class="proof-v">${(cred.credential_hash||'').slice(0,36)}...</span></div>
+        <div class="proof-row"><span class="proof-k">issued</span><span class="proof-v">${cred.issued_at_readable||'—'}</span></div>
+        <div class="proof-row"><span class="proof-k">identity_rule</span><span class="proof-v" style="color:var(--green)">1 wallet = 1 username enforced ✅</span></div>
+      </div>
+      ${gate.reasoning?`<div style="margin-top:12px;font-size:.82rem;color:var(--muted);line-height:1.65;border-top:1px solid var(--b1);padding-top:12px">🤖 <strong>${method}:</strong> ${gate.reasoning}</div>`:''}`;
+    toast(`Verification: ${trust} (${score}/100) via ${method}`,'info');
+  }catch(e){
+    rbox.className='rbox err show';
+    rbox.innerHTML=`<div style="color:var(--red);font-weight:600">❌ ${e.message}</div>`;
+    toast(e.message,'error');
+  }
+}
+
+// ── REGISTRY ─────────────────────────────────────────────────────────
+async function loadRegistry(){
+  try{
+    const r=await fetch(CRYPTO+'/registry');
+    const d=await r.json();
+    document.getElementById('regCount').textContent=`${d.total} credential${d.total!==1?'s':''} on proofpass-1 · ${d.wallet_bindings||0} wallet bindings (1:1 enforced)`;
+    const body=document.getElementById('regBody');
+    if(d.total===0){
+      body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px;font-family:var(--mono);font-size:.8rem">No credentials yet — register the first one!</td></tr>';
+      return;
+    }
+    body.innerHTML=Object.values(d.credentials).map(c=>`
+      <tr>
+        <td><strong>${c.username}.init</strong><br><span style="font-size:.72rem;color:var(--muted)">${c.display_name||''}</span></td>
+        <td><span style="font-family:var(--mono);font-size:.65rem;color:var(--muted)">${c.wallet_address.slice(0,18)}...</span></td>
+        <td><span class="badge badge-${c.status==='active'?'active':'revoked'}">${c.status.toUpperCase()}</span></td>
+        <td><span class="badge badge-${(c.trust_level||'none').toLowerCase()}">${(c.trust_level||'—').toUpperCase()}</span></td>
+        <td style="font-family:var(--mono);font-size:.7rem;color:var(--muted)">${c.issued_at_readable||new Date(c.issued_at*1000).toLocaleDateString()}</td>
+        <td style="font-family:var(--mono);font-size:.63rem;color:var(--muted)">${(c.credential_hash||'').slice(0,14)}...</td>
+      </tr>`).join('');
+  }catch(e){
+    document.getElementById('regBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--red);padding:20px">⚠️ Could not load registry — is crypto_service running?</td></tr>';
+  }
+}
+
+// ── DEFI SWAP (STEP 5) ────────────────────────────────────────────────
+async function doSwap(){
+  const btn=document.getElementById('swapBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span> &nbsp;Signing with session key...';
+  await sleep(1200);
+  
+  const txHash='0x'+[...Array(32)].map(()=>Math.floor(Math.random()*16).toString(16)).join('');
+  const method=document.getElementById('signMethod');
+  if(method) method.textContent=sessionGranted?'Session Key ⚡ (auto)':'Manual Confirm 🔒';
+
+  const rbox=document.getElementById('swapResult');
+  rbox.className='rbox ok show';
+  rbox.innerHTML=`
+    <div style="font-weight:700;color:var(--green);margin-bottom:12px">${sessionGranted?'⚡ Swap auto-signed — no popup shown!':'✅ Swap signed with manual confirm'}</div>
+    <div class="proof">
+      <div class="proof-row"><span class="proof-k">tx_hash</span><span class="proof-v">${txHash}</span></div>
+      <div class="proof-row"><span class="proof-k">action</span><span class="proof-v">swap 50 USDC → INIT</span></div>
+      <div class="proof-row"><span class="proof-k">signed_by</span><span class="proof-v" style="color:var(--green)">${sessionGranted?'ProofPass Session Key (1hr auto-sign)':'Manual wallet confirmation'}</span></div>
+      <div class="proof-row"><span class="proof-k">identity</span><span class="proof-v">${demoRegistered?demoRegistered+'.init':'proofpass identity'} (CRYSTALS-Dilithium2)</span></div>
+    </div>
+    ${sessionGranted?`<div class="callout ok" style="margin-top:12px"><span>🎉</span><div>This is ProofPass in action. No popup. No seed phrase exposure. No friction. The session key handled it automatically, backed by your quantum-safe identity and AI trust score.</div></div>`:''}`;
+  
+  markSIDone(5,'✅');
+  toast(sessionGranted?'Swap auto-signed — zero popup!':'Swap signed successfully','success');
+  btn.disabled=false;
+  btn.innerHTML='⚡ &nbsp;Execute Swap (No Popup!)';
+}
+
+// ── AUTO FULL DEMO ─────────────────────────────────────────────────────
+async function runFullDemo(){
+  const btn=document.getElementById('autoBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span> Running...';
+  
+  goSlide(0); await sleep(1500);
+  goSlide(1); await sleep(1000);
+  
+  // Connect wallet
+  simWallet(); await sleep(800);
+  goSlide(2); await sleep(2000);
+  goSlide(3); await sleep(800);
+  
+  // Fill in form
+  const username='demo_'+Math.random().toString(36).slice(2,8);
+  const ru=document.getElementById('regUser');
+  if(ru){ ru.value=username; onRegInput(); }
+  await sleep(600);
+  
+  // Register
+  await doRegister();
+  await sleep(1200);
+  
+  goSlide(4);
+  const au=document.getElementById('aiUser');
+  if(au) au.value=username;
+  await sleep(600);
+  await doAI();
+  await sleep(1500);
+  
+  goSlide(5); await sleep(800);
+  await doSwap();
+  
+  btn.disabled=false;
+  btn.innerHTML='▶&nbsp; Auto-Run Full Demo';
+  toast('Full demo complete! 🎉','success');
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+window.addEventListener('load', ()=>{ checkServices(); });
+</script>
+</body>
+</html>
